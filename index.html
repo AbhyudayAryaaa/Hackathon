@@ -1,0 +1,305 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Virtual Hackathon — Platform</title>
+  <style>
+    :root{
+      --bg:#0f1724;--card:#0b1220;--accent:#7c3aed;--muted:#94a3b8;--glass: rgba(255,255,255,0.04);
+      --success:#10b981;--danger:#ef4444;
+      --radius:12px;--transition:300ms;
+      --container:1100px;
+    }
+    *{box-sizing:border-box}
+    body{
+      margin:0;font-family:Inter,ui-sans-serif,system-ui,-apple-system,"Segoe UI",Roboto,"Helvetica Neue",Arial;
+      background: linear-gradient(180deg,#071019 0%, #0b1220 60%);color:#e6eef8;min-height:100vh;
+      -webkit-font-smoothing:antialiased;-moz-osx-font-smoothing:grayscale;
+    }
+
+    .wrap{max-width:var(--container);margin:28px auto;padding:20px}
+
+    header{
+      display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:18px
+    }
+    .brand{display:flex;align-items:center;gap:12px}
+    .logo{width:44px;height:44px;border-radius:10px;background:linear-gradient(135deg,var(--accent),#06b6d4);display:flex;align-items:center;justify-content:center;font-weight:700;color:white}
+    h1{margin:0;font-size:20px}
+    p.lead{margin:0;color:var(--muted);font-size:13px}
+
+    nav.controls{display:flex;gap:12px;align-items:center}
+    .btn{background:var(--accent);border:none;padding:10px 14px;border-radius:10px;color:white;font-weight:600;cursor:pointer;transition:all var(--transition);box-shadow:0 6px 18px rgba(124,58,237,0.12)}
+    .btn.secondary{background:transparent;border:1px solid rgba(255,255,255,0.06);color:var(--muted);font-weight:600}
+    .btn:hover{transform:translateY(-4px)}
+
+    main.grid{display:grid;grid-template-columns:2fr 1fr;gap:18px}
+
+    /* Left column */
+    .card{background:linear-gradient(180deg, rgba(255,255,255,0.02), rgba(255,255,255,0.01));border-radius:var(--radius);padding:18px;box-shadow:0 6px 30px rgba(2,6,23,0.6);}
+    .hero{display:flex;flex-direction:column;gap:12px;padding:20px}
+    .kicker{display:inline-block;padding:6px 10px;border-radius:999px;background:var(--glass);color:var(--muted);font-size:12px}
+    .title{font-size:22px;margin:0}
+    .sub{color:var(--muted);font-size:14px}
+
+    /* Problems */
+    .problems{margin-top:16px}
+    .problem{border-radius:10px;padding:12px;background:rgba(255,255,255,0.02);margin-bottom:10px;cursor:pointer;transition:all 220ms}
+    .problem:hover{transform:translateY(-4px)}
+    .problem h3{margin:0;font-size:16px}
+    .meta{color:var(--muted);font-size:13px}
+    .desc{margin-top:8px;color:#cfe8ff;display:none}
+
+    /* Right column */
+    .sidebar{position:sticky;top:28px}
+    .leaderboard table{width:100%;border-collapse:collapse}
+    .leaderboard th,.leaderboard td{padding:10px 8px;text-align:left;border-bottom:1px solid rgba(255,255,255,0.03);font-size:14px}
+    .rank{font-weight:700}
+
+    /* Registration modal */
+    .modal-backdrop{position:fixed;inset:0;background:rgba(2,6,23,0.6);display:flex;align-items:center;justify-content:center;z-index:60;opacity:0;pointer-events:none;transition:all 220ms}
+    .modal{width:100%;max-width:520px;background:linear-gradient(180deg, #061021, #071827);border-radius:14px;padding:18px;box-shadow:0 10px 40px rgba(2,6,23,0.7);transform:translateY(10px);transition:all 220ms}
+    .modal.open{transform:translateY(0)}
+    .modal-backdrop.open{opacity:1;pointer-events:auto}
+    label{display:block;font-size:13px;color:var(--muted);margin-top:12px}
+    input,select,textarea{width:100%;padding:10px;border-radius:8px;border:1px solid rgba(255,255,255,0.04);background:transparent;color:inherit}
+    .form-row{display:flex;gap:8px}
+    .form-row > *{flex:1}
+
+    /* tiny animations */
+    .pulse{animation:pulse 3s infinite}
+    @keyframes pulse{0%{box-shadow:0 6px 18px rgba(124,58,237,0.08)}50%{box-shadow:0 12px 30px rgba(124,58,237,0.14)}100%{box-shadow:0 6px 18px rgba(124,58,237,0.08)}}
+
+    /* Responsive */
+    @media (max-width:900px){
+      main.grid{grid-template-columns:1fr}
+      .sidebar{position:static}
+    }
+    @media (max-width:480px){
+      .brand h1{font-size:16px}
+      .btn{padding:8px 10px}
+      header{flex-direction:column;align-items:flex-start;gap:8px}
+    }
+
+    /* small entrance */
+    .fade-in{opacity:0;transform:translateY(10px);animation:enter 600ms forwards}
+    .fade-in.delay{animation-delay:120ms}
+    @keyframes enter{to{opacity:1;transform:translateY(0)}}
+
+    /* Accordion open */
+    .problem.open .desc{display:block;animation:fadeDown 260ms}
+    @keyframes fadeDown{from{opacity:0;transform:translateY(-6px)}to{opacity:1;transform:translateY(0)}}
+
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <header>
+      <div class="brand">
+        <div class="logo">VH</div>
+        <div>
+          <h1>Virtual Hackathon</h1>
+          <p class="lead">Host events, collect registrations, publish problems & real-time leaderboard</p>
+        </div>
+      </div>
+
+      <nav class="controls">
+        <button class="btn" id="openRegister">Register</button>
+        <button class="btn secondary" id="startSim">Start Live Sim</button>
+      </nav>
+    </header>
+
+    <main class="grid">
+      <section class="card fade-in">
+        <div class="hero">
+          <span class="kicker">Ongoing • 24 hours</span>
+          <h2 class="title">Build a smarter campus — team up & ship a demo</h2>
+          <p class="sub">Problems are released below. Submit via your team's repo link. Leaderboard updates automatically.</p>
+        </div>
+
+        <div class="problems" id="problems">
+          <!-- problems will be injected -->
+        </div>
+
+      </section>
+
+      <aside class="sidebar">
+        <div class="card leaderboard fade-in delay">
+          <h3 style="margin-top:0">Leaderboard</h3>
+          <table id="leaderboardTable">
+            <thead><tr><th>#</th><th>Team</th><th>Score</th></tr></thead>
+            <tbody></tbody>
+          </table>
+        </div>
+
+        <div style="height:12px"></div>
+
+        <div class="card fade-in delay">
+          <h4 style="margin-top:0">Quick Info</h4>
+          <p class="meta">Duration: 24h • Max team size: 4 • Submissions: GitHub link</p>
+          <div style="height:12px"></div>
+          <button class="btn" id="newProblemBtn">Add Problem</button>
+        </div>
+      </aside>
+    </main>
+  </div>
+
+  <!-- Modal (hidden by default) -->
+  <div id="modalBackdrop" class="modal-backdrop" aria-hidden="true">
+    <div class="modal" role="dialog" aria-modal="true" aria-labelledby="modalTitle">
+      <h3 id="modalTitle">Team Registration</h3>
+      <p class="meta">Create a team and join the event</p>
+      <label>Team Name</label>
+      <input id="teamName" placeholder="e.g., Team Rocket" />
+      <div class="form-row">
+        <div>
+          <label>Lead Name</label>
+          <input id="leadName" placeholder="Lead" />
+        </div>
+        <div>
+          <label>Contact Email</label>
+          <input id="leadEmail" placeholder="email@example.com" />
+        </div>
+      </div>
+
+      <label>Skills (comma separated)</label>
+      <input id="skills" placeholder="React, ML, DevOps" />
+
+      <div style="display:flex;gap:8px;margin-top:14px;justify-content:flex-end">
+        <button class="btn secondary" id="closeModal">Cancel</button>
+        <button class="btn" id="submitRegistration">Register Team</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // --- Sample problems data ---
+    const problemsData = [
+      {id:1,title:'Smart Attendance',tag:'AI/ML',difficulty:'Medium',desc:'Build a mobile/web prototype that uses face recognition to mark attendance while preserving privacy.'},
+      {id:2,title:'Campus Map',tag:'Frontend',difficulty:'Easy',desc:'Create an interactive campus map with routing and event overlays.'},
+      {id:3,title:'Sustainable Energy',tag:'Hardware',difficulty:'Hard',desc:'Design an algorithm to predict energy consumption and a dashboard to visualize it.'}
+    ];
+
+    // --- State ---
+    const teams = [
+      {team:'NullPointers',score:120},
+      {team:'ByteMe',score:95},
+      {team:'CrashTest',score:60}
+    ];
+
+    // --- Render problems ---
+    const problemsEl = document.getElementById('problems');
+    function renderProblems(){
+      problemsEl.innerHTML = '';
+      problemsData.forEach(p=>{
+        const div = document.createElement('div');
+        div.className = 'problem card';
+        div.innerHTML = `<h3>${p.title} <span style="float:right;font-size:12px;color:var(--muted)">${p.tag} • ${p.difficulty}</span></h3>
+          <p class="desc">${p.desc}</p>`;
+        div.addEventListener('click', (e)=>{
+          // toggle open (accordion)
+          div.classList.toggle('open');
+        });
+        problemsEl.appendChild(div);
+      });
+    }
+    renderProblems();
+
+    // --- Leaderboard ---
+    const lbBody = document.querySelector('#leaderboardTable tbody');
+    function renderLeaderboard(){
+      // sort desc
+      const sorted = teams.slice().sort((a,b)=>b.score - a.score);
+      lbBody.innerHTML = '';
+      sorted.forEach((t,i)=>{
+        const row = document.createElement('tr');
+        row.innerHTML = `<td class="rank">${i+1}</td><td>${t.team}</td><td>${t.score}</td>`;
+        lbBody.appendChild(row);
+      });
+    }
+    renderLeaderboard();
+
+    // --- Modal logic ---
+    const modal = document.getElementById('modalBackdrop');
+    document.getElementById('openRegister').addEventListener('click', ()=>{
+      modal.classList.add('open');modal.setAttribute('aria-hidden','false');
+      modal.querySelector('.modal').classList.add('open');
+    });
+    document.getElementById('closeModal').addEventListener('click', ()=>closeModal());
+    modal.addEventListener('click', (e)=>{ if(e.target===modal) closeModal(); });
+
+    function closeModal(){
+      modal.classList.remove('open');modal.setAttribute('aria-hidden','true');
+      modal.querySelector('.modal').classList.remove('open');
+    }
+
+    // --- Registration submit ---
+    document.getElementById('submitRegistration').addEventListener('click', ()=>{
+      const name = document.getElementById('teamName').value.trim();
+      const lead = document.getElementById('leadName').value.trim();
+      const email = document.getElementById('leadEmail').value.trim();
+      if(!name || !lead || !email){
+        alert('Please fill team name, lead and email');return;
+      }
+      teams.push({team:name,score:0});
+      renderLeaderboard();
+      closeModal();
+      // tiny highlight
+      flashTeam(name);
+    });
+
+    function flashTeam(teamName){
+      // find row
+      const rows = Array.from(lbBody.querySelectorAll('tr'));
+      const row = rows.find(r=>r.children[1].textContent===teamName);
+      if(row){
+        row.style.transition='background 500ms';
+        row.style.background='linear-gradient(90deg, rgba(124,58,237,0.12), transparent)';
+        setTimeout(()=>{row.style.background='transparent'},900);
+      }
+    }
+
+    // --- Add problem (quick inline form) ---
+    document.getElementById('newProblemBtn').addEventListener('click', ()=>{
+      const title = prompt('Problem title') || '';
+      if(!title) return;
+      const tag = prompt('Tag (e.g., AI/ML)') || 'General';
+      const diff = prompt('Difficulty (Easy/Medium/Hard)') || 'Medium';
+      const desc = prompt('Short description') || '';
+      problemsData.push({id:Date.now(),title,tag,difficulty:diff,desc});
+      renderProblems();
+    });
+
+    // --- Live simulation of scores (for demo) ---
+    let simRunning=false;let simInterval=null;
+    document.getElementById('startSim').addEventListener('click', ()=>{
+      if(simRunning){
+        simRunning=false;document.getElementById('startSim').textContent='Start Live Sim';
+        clearInterval(simInterval);return;
+      }
+      simRunning=true;document.getElementById('startSim').textContent='Stop Live Sim';
+      simInterval=setInterval(()=>{
+        if(teams.length===0) return;
+        // pick a random team and add 5-25 points
+        const idx = Math.floor(Math.random()*teams.length);
+        const add = Math.floor(Math.random()*21)+5;
+        teams[idx].score += add;
+        renderLeaderboard();
+      }, 1800);
+    });
+
+    // Accessibility: close modal with ESC
+    document.addEventListener('keydown', (e)=>{
+      if(e.key==='Escape') closeModal();
+    });
+
+    // Small UX: animate entrance of leaderboard rows
+    const observer = new MutationObserver(()=>{
+      const rows = lbBody.querySelectorAll('tr');
+      rows.forEach((r,i)=>{ r.style.opacity=0; r.style.transform='translateY(6px)'; setTimeout(()=>{ r.style.transition='all 420ms'; r.style.opacity=1; r.style.transform='translateY(0)'; }, i*60); });
+    });
+    observer.observe(lbBody,{childList:true});
+
+  </script>
+</body>
+</html>
